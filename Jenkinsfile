@@ -9,7 +9,7 @@ pipeline {
     // configured in 'Manage Jenkins' -> 'Tools' -> 'NodeJs Installations'.
     tools {
         // IMPORTANT: Replace 'NodeJS_18' with your actual Jenkins Node.js configuration name
-        nodejs 'NodeJS_18'
+        nodejs 'nodejs-18'
     }
 
     // Environment variables (optional)
