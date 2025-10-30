@@ -1,0 +1,81 @@
+pipeline {
+  agent any
+
+  environment {
+    APP_NAME = "sample-node-app"
+    IMAGE_NAME = "rinkigupta13/sample-node-app"
+    // DockerHub credentials id stored in Jenkins
+    DOCKER_CREDENTIALS_ID = "docker-hub-creds"
+  }
+
+  options {
+    skipStagesAfterUnstable()
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('Lint (optional)') {
+      steps {
+        // user can replace with real linter later; kept harmless for now
+        sh 'npm run lint || true'
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          // tag with build number to make it unique
+          IMAGE_TAG = "${env.BUILD_NUMBER}"
+          sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+        }
+      }
+    }
+
+    stage('Push Image (optional)') {
+      when {
+        expression { return env.PUSH_IMAGE == 'true' }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS_ID, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+          sh "echo $DH_PASS | docker login -u $DH_USER --password-stdin"
+          sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
+      }
+    }
+
+    stage('Deploy (run container)') {
+      steps {
+        script {
+          // stop existing container (if any) and run newest image
+          sh '''
+            if docker ps -a --format '{{.Names}}' | grep -q '^sample-node-app$'; then
+              docker rm -f sample-node-app || true
+            fi
+            docker run -d --name sample-node-app -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Build ${env.BUILD_NUMBER} completed successfully."
+    }
+    failure {
+      echo "Build failed."
+    }
+  }
+}
