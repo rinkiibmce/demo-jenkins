@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/your-username/sample-nodejs-project.git' // replace with your repo
+                git 'https://github.com/rinkiibmce/demo-jenkins' // replace with your repo
             }
         }
         stage('Install dependencies') {
