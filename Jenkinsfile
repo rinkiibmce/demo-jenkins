@@ -15,7 +15,7 @@ pipeline {
     // Environment variables (optional)
     environment {
         // Set the path for npm to install local dependencies correctly
-        PATH = "${tool 'NodeJS_18'}/bin:${env.PATH}" 
+        PATH = "${tool 'nodejs-18'}/bin:${env.PATH}" 
     }
 
     // 2. STAGES DEFINITION
